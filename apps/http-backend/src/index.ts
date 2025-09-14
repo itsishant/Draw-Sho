@@ -1,30 +1,32 @@
 import express from "express";
 import jwt from "jsonwebtoken"
 import { JWT_SECRET } from "@repo/backend-common/config";
-import { middleware } from "./middleware";
-import { User } from "./schema/user.schema";
 import bcrypt from "bcrypt";
-import { unknown } from "zod/v4";
+import { email, unknown } from "zod/v4";
 import {  CreateUserSchema } from "@repo/common/types";
 import { body } from "motion/react-client";
+import { prisma } from "@repo/db/client"
+import { _email } from "zod/v4/core";
 
 const app = express();
+app.use(express.json());
 
 app.post("/signup", async (req, res) => {
     
-    const { username, password } = req.body;
+    const { email, password, name: userName } = req.body;
     const data = CreateUserSchema.safeParse(req.body);
 
-    if(!data){
+    if(!data.success){
         return res.json({
             messasge: "Invaild inputs"
         })
     }
     try {
 
-        const existingUser = await User.findOne({
-            username
-        });
+        const existingUser = await prisma.user.findUnique({
+            where: { email }
+        }
+        )
 
         if (existingUser) {
             return res.status(400).json({
@@ -34,9 +36,12 @@ app.post("/signup", async (req, res) => {
 
         const passwordHash = await bcrypt.hash(password, 10);
 
-        const newUser = await User.create({
-            username,
-            password: passwordHash
+        const newUser = await prisma.user.create({
+            data: {
+                email,
+                password: passwordHash,
+                name: userName
+            }
         })
         
         const token = jwt.sign({
@@ -58,13 +63,12 @@ app.post("/signup", async (req, res) => {
 
 app.post("/signin", async (req, res) => {
 
-    const { username, password } = req.body;
+    const { email, password } = req.body;
 
     try {
 
-        const findUser = await User.findOne({
-            username,
-            password
+        const findUser = await prisma.user.findUnique({
+            where: { email }
         })
 
         if (!findUser) {
@@ -96,10 +100,6 @@ app.post("/signin", async (req, res) => {
         })
     }
 
-})
-
-app.post("/room", middleware, (req, res) => {
-    
 })
 
 app.listen(3000);
