@@ -3,13 +3,15 @@ import jwt from "jsonwebtoken"
 import { JWT_SECRET } from "@repo/backend-common/config";
 import bcrypt from "bcrypt";
 import { email, unknown } from "zod/v4";
-import {  CreateUserSchema } from "@repo/common/types";
+import {  CreateUserSchema, SigninSchema } from "@repo/common/types";
 import { body } from "motion/react-client";
 import { prisma } from "@repo/db/client"
 import { _email } from "zod/v4/core";
 
 const app = express();
 app.use(express.json());
+const PORT = 3000;
+
 
 app.post("/signup", async (req, res) => {
     
@@ -17,7 +19,7 @@ app.post("/signup", async (req, res) => {
     const data = CreateUserSchema.safeParse(req.body);
 
     if(!data.success){
-        return res.json({
+        return res.status(400).json({
             messasge: "Invaild inputs"
         })
     }
@@ -45,7 +47,7 @@ app.post("/signup", async (req, res) => {
         })
         
         const token = jwt.sign({
-            id: newUser._id
+            id: newUser.id
         }, JWT_SECRET)
 
         return res.status(200).json({
@@ -54,6 +56,7 @@ app.post("/signup", async (req, res) => {
         })
 
     } catch (error) {
+        console.log(error);
         res.status(500).json({
             message: "Internal Server Error"
         })
@@ -64,6 +67,13 @@ app.post("/signup", async (req, res) => {
 app.post("/signin", async (req, res) => {
 
     const { email, password } = req.body;
+    const data = SigninSchema.safeParse(req.body);
+
+    if(!data.success) {
+        return res.json({
+            message: "Invaild inputs"
+        })
+    }
 
     try {
 
@@ -86,7 +96,7 @@ app.post("/signin", async (req, res) => {
         }
 
         const token = jwt.sign({
-            id: findUser._id
+            id: findUser.id
         }, JWT_SECRET);
 
         return res.status(200).json({
@@ -102,4 +112,6 @@ app.post("/signin", async (req, res) => {
 
 })
 
-app.listen(3000);
+app.listen(PORT, () =>  {
+    console.log(`Server is running at ${PORT}`)
+})
