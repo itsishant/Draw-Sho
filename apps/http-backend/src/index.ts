@@ -14,7 +14,7 @@ const PORT = 3000;
 
 
 app.post("/signup", async (req, res) => {
-    
+
     const { email, password, name: userName } = req.body;
     const data = CreateUserSchema.safeParse(req.body);
 
@@ -23,6 +23,8 @@ app.post("/signup", async (req, res) => {
             messasge: "Invaild inputs"
         })
     }
+
+    
     try {
 
         const existingUser = await prisma.user.findUnique({
