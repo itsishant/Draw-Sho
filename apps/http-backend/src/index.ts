@@ -23,7 +23,6 @@ app.post("/signup", async (req, res) => {
             messasge: "Invaild inputs"
         })
     }
-
     
     try {
 
@@ -34,7 +33,7 @@ app.post("/signup", async (req, res) => {
 
         if (existingUser) {
             return res.status(400).json({
-                message: "User already exists with this username"
+                message: "User already exists with this email"
             })
         }
 
@@ -89,7 +88,6 @@ app.post("/signin", async (req, res) => {
             })
         }
 
-        //@ts-ignore
         const comparePassword = await bcrypt.compare(password, findUser.password); 
         if (!comparePassword) {
             return res.status(400).json({

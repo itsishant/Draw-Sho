@@ -1,29 +1,89 @@
 import { request } from "http";
-import { WebSocketServer } from "ws";
+import WebSocket,{ WebSocketServer} from "ws";
 import jwt from "jsonwebtoken"
 import { JWT_SECRET } from "@repo/backend-common/config";
+import { prisma } from "@repo/db/client";
 
-const wss = new WebSocketServer({ port: 8080 });
+const ws = new WebSocketServer({ port: 8080 });
 
-wss.on("connection", function connection(ws) {
-    ws.on("message", function message(message) {
+interface User {
+    ws: WebSocket
+    rooms: string[],
+    userId: string 
+}
 
-        // @ts-ignore
-        const url = request.url as unknown as string;
+const users: User[] = [];
 
-        if(!url){
-            return;
+function checkUser(token: string): string | null {
+   try {
+
+     const decoded = jwt.verify(token, JWT_SECRET);
+
+    if (typeof decoded == "string") {
+        return null;
+    }
+
+    if(!decoded || !decoded.id) {
+        return null;
+    }
+
+    return decoded.id;
+
+   } catch (error) {
+    return null;
+   }
+   return null
+}
+
+ws.on("connection", (ws, req) => {
+    const url = req.url || "";
+    const queryParams = new URLSearchParams(url.split("?")[1]);
+    const token = queryParams.get("token") || "";
+    const userId = checkUser(token);
+
+    if (!userId) {
+        ws.close(1008, "Invalid token");
+        return;
+    }
+
+    const user: User = { userId, rooms: [], ws };
+    users.push(user);
+
+    ws.send("Hello from server 8080");
+
+    ws.on("message", async (raw) => {
+        let parsedData;
+    try {
+        parsedData = JSON.parse(raw.toString());
+    } catch (err) {
+        console.error("❌ Invalid JSON from client:", raw.toString());
+        ws.send(JSON.stringify({ type: "error", message: "Invalid JSON" }));
+        return;
+    }
+
+    if (parsedData.type === "join_room") {
+        user.rooms.push(parsedData.roomId);
+    }
+
+    if (parsedData.type === "leave_room") {
+        user.rooms = user.rooms.filter(r => r !== parsedData.roomId);
+    }
+
+    await prisma.chat.create({
+        data: {
+            roomId,
+            message,
+            userId
         }
+    })
 
-        const queryParams = new URLSearchParams(url.split("?")[1]);
-        const token = queryParams.get("token") || "";
-        const decoded = jwt.verify(token, JWT_SECRET);
-
-        if (!decoded) {
-            ws.close();
-            return;
-        }
-
-        ws.send("Hello from server 8080");
-    }) 
-})
+    if (parsedData.type === "chat") {
+        const { roomId, message } = parsedData;
+        users.forEach(u => {
+            if (u.rooms.includes(roomId)) {
+                u.ws.send(JSON.stringify({ type: "chat", message, roomId }));
+            }
+        });
+    }
+    });
+});
