@@ -1,4 +1,3 @@
-import { request } from "http";
 import WebSocket, { WebSocketServer } from "ws";
 import jwt from "jsonwebtoken";
 import { JWT_SECRET } from "@repo/backend-common/config";
@@ -14,7 +13,7 @@ interface User {
 
 const users: User[] = [];
 
-function checkUser(token: string): string | null {
+async function checkUser(token: string): string | null {
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
 
@@ -67,13 +66,11 @@ ws.on("connection", (ws, req) => {
       user.rooms = user.rooms.filter((r) => r !== parsedData.roomId);
     }
 
-    await prisma.chat.create({
-      data: {
-        roomId,
-        message,
-        userId,
-      },
-    });
+    await prisma.chat.create({\
+      "data": {
+         
+      }
+    })
 
     if (parsedData.type === "chat") {
       const { roomId, message } = parsedData;
