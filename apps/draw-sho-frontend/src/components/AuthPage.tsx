@@ -6,7 +6,7 @@ export default function AuthPage({isSignin}: {
     return (
         <>
         <div>
-            hello
+            
         </div>
         </>
     )

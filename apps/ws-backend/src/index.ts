@@ -66,11 +66,16 @@ ws.on("connection", (ws, req) => {
       user.rooms = user.rooms.filter((r) => r !== parsedData.roomId);
     }
 
-    await prisma.chat.create({\
-      "data": {
-         
+    if (parsedData.type === "chat") {
+      const { roomId, message } = parsedData;
+      await prisma.chat.create({
+      data: {
+        roomId,
+        message,
+        userId:
       }
-    })
+      });
+    }
 
     if (parsedData.type === "chat") {
       const { roomId, message } = parsedData;
