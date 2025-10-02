@@ -3,6 +3,8 @@
   "version": "0.0.0",
   "private": true,
   "exports": {
+    ".": "./src/index.ts",
+    "./input": "./src/input.tsx",
     "./config": "./src/config.ts"
   },
   "scripts": {
