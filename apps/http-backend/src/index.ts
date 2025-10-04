@@ -10,12 +10,12 @@ import { _email } from "zod/v4/core";
 
 const app = express();
 app.use(express.json());
-const PORT = 3000;
+const PORT = 3001;
 
 app.post("/signup", async (req, res) => {
   const { email, password, name: userName } = req.body;
   const data = CreateUserSchema.safeParse(req.body);
-
+  
   if (!data.success) {
     return res.status(400).json({
       messasge: "Invaild inputs",
